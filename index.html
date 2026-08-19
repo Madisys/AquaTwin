@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDISYS Enterprise B2B — Gemelo Digital Acuícola</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0A0F1D;
+            --bg-panel: #131B2E;
+            --bg-card: #1C273E;
+            --border: #2A3B5C;
+            --accent-blue: #2563EB;
+            --accent-cyan: #06B6D4;
+            --accent-green: #10B981;
+            --accent-yellow: #F59E0B;
+            --accent-red: #EF4444;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        /* Top Bar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-panel);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        .topbar h1 { font-size: 1.4rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px; }
+        .topbar .sys-status { display: flex; gap: 15px; font-size: 0.85rem; }
+        .badge-live { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--accent-green); }
+
+        /* Grid Master Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 340px;
+            gap: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Jaulas Selector */
+        .cage-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .cage-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .cage-btn:hover, .cage-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-cyan);
+        }
+
+        /* Form elements */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .control-group label { font-size: 0.8rem; color: var(--text-secondary); display: flex; justify-content: space-between; }
+        select, input[type="range"] {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px;
+            border-radius: 4px;
+        }
+
+        /* Canvas Submarino */
+        #viewportCanvas {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(180deg, #0b2545 0%, #030811 100%);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        /* Metrics KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .kpi-card .kpi-label { font-size: 0.75rem; color: var(--text-secondary); }
+        .kpi-card .kpi-val { font-size: 1.1rem; font-weight: bold; margin-top: 4px; color: var(--text-primary); }
+
+        /* Epidemiología Table */
+        .epi-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .epi-table th, .epi-table td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .epi-table th { color: var(--text-secondary); }
+
+        /* Action Buttons */
+        .btn-action {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        .btn-action:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <h1><span>MEDISYS</span> Enterprise B2B Engine</h1>
+        <div class="sys-status">
+            <span>Centro: <b>Los Lagos - Sitio 102</b></span>
+            <span>Conexión: <b>Starlink LEO</b></span>
+            <span class="badge-live">● EN VIVO</span>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="panel">
+            <div class="panel-title">1. Selección de Balsa Jaula</div>
+            <div class="cage-selector">
+                <button class="cage-btn active" onclick="selectCage(101)">Jaula 101</button>
+                <button class="cage-btn" onclick="selectCage(102)">Jaula 102</button>
+                <button class="cage-btn" onclick="selectCage(103)">Jaula 103</button>
+                <button class="cage-btn" onclick="selectCage(104)">Jaula 104</button>
+                <button class="cage-btn" onclick="selectCage(105)">Jaula 105</button>
+                <button class="cage-btn" onclick="selectCage(106)">Jaula 106</button>
+            </div>
+
+            <div class="panel-title" style="margin-top:10px;">2. Configuración Lote</div>
+            <div class="control-group">
+                <label>Especie en Cultivo</label>
+                <select id="specieSelect" onchange="updateModel()">
+                    <option value="salar">Salmo salar (Atlántico)</option>
+                    <option value="coho">Oncorhynchus kisutch (Coho)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Mes de Engorda: <b id="monthDisp">2</b></label>
+                <input type="range" id="monthSlider" min="1" max="18" value="2" oninput="updateModel()">
+            </div>
+
+            <div class="panel-title" style="margin-top:10px;">3. Variables de Entrada</div>
+            <div class="control-group">
+                <label>Temperatura Agua (°C): <b id="tempDisp">11.5</b></label>
+                <input type="range" id="tempInput" min="6" max="18" step="0.5" value="11.5" oninput="updateModel()">
+            </div>
+
+            <div class="control-group">
+                <label>Oxígeno Disuelto (mg/L): <b id="o2Disp">8.5</b></label>
+                <input type="range" id="o2Input" min="4" max="11" step="0.1" value="8.5" oninput="updateModel()">
+            </div>
+
+            <div class="control-group">
+                <label>Bioactivos (Cochayuyo/Fitogénicos)</label>
+                <select id="additiveSelect" onchange="updateModel()">
+                    <option value="0">Sin Suplementación</option>
+                    <option value="1" selected>Extracto Cochayuyo (1.0%) + Fitogénicos</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Monitor Submarino en Tiempo Real — <span id="activeCageTitle" style="color:var(--text-primary);">Jaula 101</span></div>
+            <canvas id="viewportCanvas"></canvas>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Población Viva</div>
+                    <div class="kpi-val" id="popVal">84,444 ind</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Peso Promedio ($W_t$)</div>
+                    <div class="kpi-val" id="weightVal">0.18 kg</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Biomasa Total</div>
+                    <div class="kpi-val" id="biomassVal">15.2 Ton</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Densidad Cultivo</div>
+                    <div class="kpi-val" id="densityVal">3.8 kg/m³</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">eFCR Estimado</div>
+                    <div class="kpi-val" id="fcrVal" style="color:var(--accent-green);">0.98</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">REDOX Sedimento</div>
+                    <div class="kpi-val" id="redoxVal" style="color:var(--accent-cyan);">+120 mV</div>
+                </div>
+            </div>
+
+            <div class="panel-title" style="margin-top:10px;">Trayectoria Bioenergética del Lote</div>
+            <div style="height: 160px;">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Prevalencia Epidemiológica</div>
+            <table class="epi-table">
+                <thead>
+                    <tr><th>Patología</th><th>Prevalencia</th><th>Riesgo</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>SRS (P. salmonis)</td><td id="srsVal">1.2%</td><td><span style="color:var(--accent-green)">Bajo</span></td></tr>
+                    <tr><td>Virus ISA</td><td id="isaVal">0.0%</td><td><span style="color:var(--accent-green)">Nulo</span></td></tr>
+                    <tr><td>Caligus (HO/pez)</td><td id="caligusVal">0.4 HO</td><td><span style="color:var(--accent-green)">Óptimo</span></td></tr>
+                    <tr><td>Saprolegnia</td><td id="saproVal">0.3%</td><td><span style="color:var(--accent-green)">Bajo</span></td></tr>
+                </tbody>
+            </table>
+
+            <div class="panel-title" style="margin-top:10px;">Target Costing & Métricas B2B</div>
+            <div class="kpi-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="kpi-card">
+                    <div class="kpi-label">Mortalidad Mes</div>
+                    <div class="kpi-val" id="mortVal" style="color:var(--accent-green);">0.30%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Costo Ex-Farm / kg</div>
+                    <div class="kpi-val" id="costKgVal">$3.85 USD</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Precio Spot Mercado</div>
+                    <div class="kpi-val">$7.20 USD</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">EBITDA Proyectado</div>
+                    <div class="kpi-val" id="ebitdaVal" style="color:var(--accent-green);">$1.27M USD</div>
+                </div>
+            </div>
+
+            <button class="btn-action" style="margin-top:15px;" onclick="triggerNanobubbles()">Activar Biorremediación Nanoburbujas</button>
+        </div>
+    </div>
+
+    <script>
+        let currentCage = 101;
+        const canvas = document.getElementById('viewportCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+
+        function selectCage(id) {
+            currentCage = id;
+            document.querySelectorAll('.cage-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('activeCageTitle').innerText = "Jaula " + id;
+            updateModel();
+        }
+
+        function updateModel() {
+            let m = parseInt(document.getElementById('monthSlider').value);
+            let t = parseFloat(document.getElementById('tempInput').value);
+            let o2 = parseFloat(document.getElementById('o2Input').value);
+            let specie = document.getElementById('specieSelect').value;
+            let additive = document.getElementById('additiveSelect').value;
+
+            document.getElementById('monthDisp').innerText = m;
+            document.getElementById('tempDisp').innerText = t;
+            document.getElementById('o2Disp').innerText = o2;
+
+            // Motor Bioenergético
+            let baseW = specie === 'salar' ? 0.18 : 0.25;
+            let weight = baseW * Math.pow(1 + (t * 0.08 * m / 12), 2.2);
+            let pop = Math.round(85000 - (m * 280));
+            let biomass = (pop * weight) / 1000;
+            let density = biomass / 4; // Volumen base 4000m3
+            let fcr = 1.05 - (additive === "1" ? 0.07 : 0) + (o2 < 7.0 ? 0.15 : 0);
+
+            document.getElementById('popVal').innerText = pop.toLocaleString() + " ind";
+            document.getElementById('weightVal').innerText = weight.toFixed(2) + " kg";
+            document.getElementById('biomassVal').innerText = biomass.toFixed(1) + " Ton";
+            document.getElementById('densityVal').innerText = density.toFixed(1) + " kg/m³";
+            document.getElementById('fcrVal').innerText = fcr.toFixed(2);
+
+            // Chart update
+            chart.data.datasets[0].data[m-1] = weight;
+            chart.update();
+        }
+
+        // Canvas Animado
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#2A3B5C';
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 30);
+
+            // Sedimento
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(10, canvas.height - 20, canvas.width - 20, 10);
+
+            // Simulación de peces
+            ctx.fillStyle = '#94a3b8';
+            for(let i = 0; i < 12; i++) {
+                let x = (Math.sin(Date.now() * 0.001 + i) + 1) * (canvas.width / 2.5) + 30;
+                let y = 30 + (i * 18);
+                ctx.beginPath();
+                ctx.ellipse(x, y, 10, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            requestAnimationFrame(drawCanvas);
+        }
+
+        // Chart.js Setup
+        const ctxChart = document.getElementById('mainChart').getContext('2d');
+        const chart = new Chart(ctxChart, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 18}, (_, i) => `M${i+1}`),
+                datasets: [{
+                    label: 'Proyección Peso (kg)',
+                    data: [0.18, 0.35, 0.60, 0.95, 1.35, 1.80, 2.30, 2.85, 3.40, 3.90, 4.40, 5.05],
+                    borderColor: '#06B6D4',
+                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#2A3B5C' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#2A3B5C' } }
+                }
+            }
+        });
+
+        function triggerNanobubbles() {
+            alert("Sistemas de nanoburbujas activados en la Jaula " + currentCage + ". Inyección masiva de O2 iniciada para biorremediación bentónica.");
+        }
+
+        updateModel();
+        drawCanvas();
+    </script>
+</body>
+</html>
