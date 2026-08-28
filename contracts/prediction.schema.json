@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AquaTwin AT-MORT-001 Prediction",
+  "type": "object",
+  "required": ["prediction_id", "cage_id", "predicted_at", "horizon_hours", "risk_score", "model_id", "model_version", "feature_version", "input_hash"],
+  "properties": {
+    "prediction_id": {"type": "string", "format": "uuid"},
+    "cage_id": {"type": "string", "format": "uuid"},
+    "cohort_id": {"type": ["string", "null"], "format": "uuid"},
+    "predicted_at": {"type": "string", "format": "date-time"},
+    "horizon_hours": {"type": "integer", "enum": [24, 72, 168]},
+    "risk_score": {"type": "number", "minimum": 0, "maximum": 1},
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "data_quality_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "model_id": {"type": "string"},
+    "model_version": {"type": "string"},
+    "feature_version": {"type": "string"},
+    "input_hash": {"type": "string"},
+    "drivers": {"type": "array", "items": {"type": "string"}},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "human_review_required": {"const": true}
+  },
+  "additionalProperties": false
+}
